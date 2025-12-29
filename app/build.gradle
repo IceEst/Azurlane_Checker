@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace 'com.example.fakeio'
+    namespace 'com.example.checker'
     compileSdk 33
 
     defaultConfig {
-        applicationId "com.example.fakeio"
+        applicationId "com.example.checker"
         minSdk 26
         targetSdk 33
         versionCode 1
