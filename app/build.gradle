@@ -32,3 +32,4 @@ dependencies {
     // 使用真实的 Xposed API 引用
     compileOnly 'de.robv.android.xposed:api:82'
 }
+ 
