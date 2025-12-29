@@ -29,6 +29,6 @@ android {
 }
 
 dependencies {
-    compileOnly 'view.pms.hook:api:1.0.0' // Xposed API 占位
-    // 这里我们直接手动引用 LSPosed API，通过 Actions 自动下载
+    // 真正的 Xposed API 引用，只需编译时包含，不需要打包进 APK
+    compileOnly 'de.robv.android.xposed:api:82'
 }
