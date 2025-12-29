@@ -1,0 +1,34 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.example.fakeio'
+    compileSdk 33
+
+    defaultConfig {
+        applicationId "com.example.fakeio"
+        minSdk 26
+        targetSdk 33
+        versionCode 1
+        versionName "1.0"
+
+        externalNativeBuild {
+            cmake {
+                cppFlags "-std=c++17"
+                abiFilters 'arm64-v8a', 'x86_64'
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+        }
+    }
+}
+
+dependencies {
+    compileOnly 'view.pms.hook:api:1.0.0' // Xposed API 占位
+    // 这里我们直接手动引用 LSPosed API，通过 Actions 自动下载
+}
