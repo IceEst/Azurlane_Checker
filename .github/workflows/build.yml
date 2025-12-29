@@ -1,13 +1,4 @@
-name: Build APK
-on: [push]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Java
+- name: Setup Java
         uses: actions/setup-java@v4
         with:
           java-version: '17'
@@ -23,18 +14,16 @@ jobs:
           mkdir -p app/src/main/cpp/dobby
           git clone --depth 1 https://github.com/jmpews/Dobby.git app/src/main/cpp/dobby
 
-      - name: Init Gradle Wrapper
-        run: gradle wrapper --gradle-version 8.0 # 指定兼容的版本
+      # 替换原来的 "Init Gradle Wrapper" 步骤
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.0 # 直接在此指定 Gradle 版本
 
       - name: Build APK
         run: |
-          chmod +x gradlew
-          ./gradlew :app:assembleRelease
-
-      - name: Build APK
-        run: |
-          chmod +x gradlew
-          ./gradlew :app:assembleRelease
+          # 直接使用 gradle 命令，不再需要先生成 wrapper
+          gradle :app:assembleRelease
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
