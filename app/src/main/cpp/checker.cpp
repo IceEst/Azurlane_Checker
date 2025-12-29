@@ -51,3 +51,4 @@ Java_com_example_checker_HookEntry_runNativeCheck(JNIEnv* env, jobject thiz, jst
 
     env->ReleaseStringUTFChars(apkPath, path);
 }
+
