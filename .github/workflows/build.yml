@@ -5,8 +5,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -20,22 +19,19 @@ jobs:
           ndk-version: r23c
 
       - name: Setup Gradle
-        # 使用此 Action 直接安装 Gradle 8.2，跳过系统默认的 9.2.1
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.2'
 
       - name: Build APK
-        # 注意：这里直接用 gradle 命令，不要用 ./gradlew
-        run: |
-          gradle :app:assembleRelease
+        run: gradle :app:assembleRelease
 
-      - name: Rename APK for Clarity
-        run: |
-          mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/AzurLane_Checker_v1.0.apk
+      - name: Rename APK
+        # 使用通配符 *.apk 避免找不到具体文件名的问题
+        run: mv app/build/outputs/apk/release/*.apk AzurLane_Checker_v1.0.apk
 
-      - name: Upload Checker APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: AzurLane-Checker
-          path: app/build/outputs/apk/release/AzurLane_Checker_v1.0.apk
+          path: AzurLane_Checker_v1.0.apk
