@@ -20,19 +20,20 @@ jobs:
           ndk-version: r25c
 
       - name: Download Dobby Library
-        # 项目 CMakeLists.txt 要求在 src/main/cpp/dobby 目录下有 Dobby 源码
+        # 你的 CMakeLists.txt 配置要求 Dobby 源码位于此路径
         run: |
           mkdir -p app/src/main/cpp/dobby
           git clone --depth 1 https://github.com/jmpews/Dobby.git app/src/main/cpp/dobby
 
       - name: Setup Gradle
-        # 使用官方 Action 确保使用指定的 Gradle 8.0 版本，避免 Gradle 9.x 的兼容性问题
+        # 使用官方 Action 安装并配置特定版本的 Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
-          gradle-version: 8.0
+          # 明确指定版本号并加引号，解决 "version 8 does not exists" 报错
+          gradle-version: '8.2' 
 
       - name: Build APK
-        # 直接调用 gradle 构建 release 版本
+        # 使用安装好的 gradle 环境进行编译
         run: |
           gradle :app:assembleRelease
 
@@ -40,5 +41,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: FakeIO-Module
-          # 构件输出路径通常在 app 模块的 build 目录下
+          # 产物路径对应 app/build.gradle 中的默认输出
           path: app/build/outputs/apk/release/*.apk
