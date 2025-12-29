@@ -1,12 +1,11 @@
 name: Build APK
-on: [push, pull_request]
+on: [push]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -17,22 +16,20 @@ jobs:
       - name: Setup NDK
         uses: nttld/setup-ndk@v1
         with:
-          # 建议使用 r23b，它对许多 Hook 库的兼容性较好
-          ndk-version: r23b
+          ndk-version: r23c # 修改为 r23c 以解决汇编兼容性问题
 
       - name: Download Dobby Library
         run: |
           mkdir -p app/src/main/cpp/dobby
           git clone --depth 1 https://github.com/jmpews/Dobby.git app/src/main/cpp/dobby
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: '8.2'
+      - name: Init Gradle Wrapper
+        run: gradle wrapper --gradle-version 8.0
 
       - name: Build APK
         run: |
-          gradle :app:assembleRelease
+          chmod +x gradlew
+          ./gradlew :app:assembleRelease
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
