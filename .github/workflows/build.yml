@@ -21,13 +21,15 @@ jobs:
       - name: Download Dobby Library
         run: |
           mkdir -p app/src/main/cpp/dobby
-          # 这里会自动下载 Dobby 源码和库文件
           git clone --depth 1 https://github.com/jmpews/Dobby.git app/src/main/cpp/dobby
+
+      - name: Init Gradle Wrapper
+        run: gradle wrapper # 这一步会自动生成 gradlew，解决没有编译环境的问题
 
       - name: Build APK
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease
+          ./gradlew :app:assembleRelease
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
