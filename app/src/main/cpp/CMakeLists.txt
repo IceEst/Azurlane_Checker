@@ -2,8 +2,12 @@ cmake_minimum_required(VERSION 3.22.1)
 project("fakeio")
 
 # 1. 核心修复：使用正确的变量名禁用闭包跳板模块
-# 移除 "DOBBY_" 前缀，这是解决 ADRP relocation 错误的关键
+# 尝试使用两种可能的变量名来彻底禁用
+set(DOBBY_BuildClosureTrampoline OFF CACHE BOOL "" FORCE)
 set(BuildClosureTrampoline OFF CACHE BOOL "" FORCE)
+
+# 同时建议禁用生成汇编跳板（如果适用）
+set(DOBBY_GENERATE_SHARED OFF CACHE BOOL "" FORCE)
 
 # 2. 建议：禁用 Dobby 的示例程序和测试，避免不必要的编译错误
 set(BuildExamples OFF CACHE BOOL "" FORCE)
