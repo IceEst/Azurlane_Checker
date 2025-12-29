@@ -17,23 +17,20 @@ jobs:
       - name: Setup NDK
         uses: nttld/setup-ndk@v1
         with:
-          ndk-version: r25c
+          # 建议使用 r23b，它对许多 Hook 库的兼容性较好
+          ndk-version: r23b
 
       - name: Download Dobby Library
-        # 你的 CMakeLists.txt 配置要求 Dobby 源码位于此路径
         run: |
           mkdir -p app/src/main/cpp/dobby
           git clone --depth 1 https://github.com/jmpews/Dobby.git app/src/main/cpp/dobby
 
       - name: Setup Gradle
-        # 使用官方 Action 安装并配置特定版本的 Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
-          # 明确指定版本号并加引号，解决 "version 8 does not exists" 报错
-          gradle-version: '8.2' 
+          gradle-version: '8.2'
 
       - name: Build APK
-        # 使用安装好的 gradle 环境进行编译
         run: |
           gradle :app:assembleRelease
 
@@ -41,5 +38,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: FakeIO-Module
-          # 产物路径对应 app/build.gradle 中的默认输出
           path: app/build/outputs/apk/release/*.apk
