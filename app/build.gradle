@@ -29,6 +29,6 @@ android {
 }
 
 dependencies {
-    // 真正的 Xposed API 引用，只需编译时包含，不需要打包进 APK
+    // 使用真实的 Xposed API 引用
     compileOnly 'de.robv.android.xposed:api:82'
 }
