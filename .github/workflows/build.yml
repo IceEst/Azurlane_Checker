@@ -23,7 +23,7 @@ jobs:
         run: |
           mkdir -p app/src/main/cpp/dobby
           # 使用修复了 ADRP 错误的维护分支
-          git clone --depth 1 https://github.com/chiteroman/Dobby.git app/src/main/cpp/dobby
+          git clone --depth 1 https://github.com/dzyong/Dobby.git app/src/main/cpp/dobby
 
       - name: Setup Gradle
         # 使用此 Action 直接安装 Gradle 8.2，跳过系统默认的 9.2.1
