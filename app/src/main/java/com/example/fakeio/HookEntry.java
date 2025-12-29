@@ -1,12 +1,13 @@
 package com.example.fakeio;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import de.robv.android.xposed.callbacks.XC_LoadPackage; // 确保这个导入存在
 import de.robv.android.xposed.XposedBridge;
 
 public class HookEntry implements IXposedHookLoadPackage {
     @Override
-    public void handleLoadPackage(XC_LoadPackage.LoadParam lpparam) throws Throwable {
+    // 将 XC_LoadPackage.LoadParam 修改为 XC_LoadPackage.LoadPackageParam
+    public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) throws Throwable {
         // 只针对碧蓝航线
         if (!lpparam.packageName.equals("com.bilibili.azurlane")) return;
 
