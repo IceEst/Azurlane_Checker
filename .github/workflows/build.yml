@@ -1,4 +1,14 @@
-- name: Setup Java
+name: Build APK
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           java-version: '17'
@@ -10,23 +20,25 @@
           ndk-version: r25c
 
       - name: Download Dobby Library
+        # 项目 CMakeLists.txt 要求在 src/main/cpp/dobby 目录下有 Dobby 源码
         run: |
           mkdir -p app/src/main/cpp/dobby
           git clone --depth 1 https://github.com/jmpews/Dobby.git app/src/main/cpp/dobby
 
-      # 替换原来的 "Init Gradle Wrapper" 步骤
       - name: Setup Gradle
+        # 使用官方 Action 确保使用指定的 Gradle 8.0 版本，避免 Gradle 9.x 的兼容性问题
         uses: gradle/actions/setup-gradle@v3
         with:
-          gradle-version: 8.0 # 直接在此指定 Gradle 版本
+          gradle-version: 8.0
 
       - name: Build APK
+        # 直接调用 gradle 构建 release 版本
         run: |
-          # 直接使用 gradle 命令，不再需要先生成 wrapper
           gradle :app:assembleRelease
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: FakeIO-Module
+          # 构件输出路径通常在 app 模块的 build 目录下
           path: app/build/outputs/apk/release/*.apk
