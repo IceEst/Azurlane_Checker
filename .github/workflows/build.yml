@@ -1,11 +1,12 @@
 name: Build APK
-on: [push]
+on: [push, pull_request]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -16,20 +17,23 @@ jobs:
       - name: Setup NDK
         uses: nttld/setup-ndk@v1
         with:
-          ndk-version: r23c # 核心：解决之前的 C++ 编译报错
+          ndk-version: r23c
 
       - name: Download Dobby Library
         run: |
           mkdir -p app/src/main/cpp/dobby
           git clone --depth 1 https://github.com/jmpews/Dobby.git app/src/main/cpp/dobby
 
-      - name: Init Gradle Wrapper
-        run: gradle wrapper --gradle-version 8.0 # 核心：锁定兼容的 Gradle 版本
+      - name: Setup Gradle
+        # 使用此 Action 直接安装 Gradle 8.2，跳过系统默认的 9.2.1
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.2'
 
       - name: Build APK
+        # 注意：这里直接用 gradle 命令，不要用 ./gradlew
         run: |
-          chmod +x gradlew
-          ./gradlew :app:assembleRelease
+          gradle :app:assembleRelease
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
