@@ -16,7 +16,7 @@ jobs:
       - name: Setup NDK
         uses: nttld/setup-ndk@v1
         with:
-          ndk-version: r23c # 修改为 r23c 以解决汇编兼容性问题
+          ndk-version: r23c # 核心：解决之前的 C++ 编译报错
 
       - name: Download Dobby Library
         run: |
@@ -24,7 +24,7 @@ jobs:
           git clone --depth 1 https://github.com/jmpews/Dobby.git app/src/main/cpp/dobby
 
       - name: Init Gradle Wrapper
-        run: gradle wrapper --gradle-version 8.0
+        run: gradle wrapper --gradle-version 8.0 # 核心：锁定兼容的 Gradle 版本
 
       - name: Build APK
         run: |
