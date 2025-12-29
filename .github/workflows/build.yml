@@ -1,0 +1,36 @@
+name: Build APK
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup NDK
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r25c
+
+      - name: Download Dobby Library
+        run: |
+          mkdir -p app/src/main/cpp/dobby
+          # 这里会自动下载 Dobby 源码和库文件
+          git clone --depth 1 https://github.com/jmpews/Dobby.git app/src/main/cpp/dobby
+
+      - name: Build APK
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: FakeIO-Module
+          path: app/build/outputs/apk/release/*.apk
