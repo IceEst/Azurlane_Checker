@@ -13,5 +13,5 @@ dependencyResolutionManagement {
         maven { url 'https://api.xposed.info/' }
     }
 }
-rootProject.name = "AzurLane-FakeIO"
+rootProject.name = "AzurLane-Checker"
 include ':app'
