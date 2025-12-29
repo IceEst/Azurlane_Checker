@@ -3,48 +3,56 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <android/log.h>
+#include <dlfcn.h> // 必须引入，用于 dlsym
 #include "dobby.h"
 
 #define LOG_TAG "FakeIO"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 
-// 原版备份路径 (请确保手动将原版 base.apk 改名放进这个位置)
 const char* REDIRECT_TARGET = "/data/data/com.bilibili.azurlane/base_orig.apk";
 
-// 备份原始函数地址
 int (*orig_openat)(int, const char*, int, mode_t);
 int (*orig_newfstatat)(int, const char*, struct stat*, int);
 
-// 核心重定向逻辑
 const char* redirect_if_needed(const char* pathname) {
     if (pathname != nullptr && strstr(pathname, "base.apk") != nullptr) {
-        LOGI("发现目标路径，执行重定向: %s", pathname);
-        return REDIRECT_TARGET;
+        // 排除掉 .so 库的探测路径，只拦截包体访问
+        if (strstr(pathname, "!") == nullptr) {
+            LOGI("正在重定向包体访问: %s", pathname);
+            return REDIRECT_TARGET;
+        }
     }
     return pathname;
 }
 
-// 伪造函数：openat
 int my_openat(int dirfd, const char* pathname, int flags, mode_t mode) {
     return orig_openat(dirfd, redirect_if_needed(pathname), flags, mode);
 }
 
-// 伪造函数：newfstatat
 int my_newfstatat(int dirfd, const char* pathname, struct stat* buf, int flags) {
     return orig_newfstatat(dirfd, redirect_if_needed(pathname), buf, flags);
 }
 
-// 模块加载时的初始化
 __attribute__((constructor))
 void init() {
-    LOGI("Native Hook 模块已载入，正在搜寻目标地址...");
-    
-    // 使用 Dobby 挂钩系统调用
-    DobbyHook((void*)DobbySymbolResolver("libc.so", "openat"), 
-              (void*)my_openat, (void**)&orig_openat);
-              
-    DobbyHook((void*)DobbySymbolResolver("libc.so", "newfstatat"), 
-              (void*)my_newfstatat, (void**)&orig_newfstatat);
-              
-    LOGI("Hook 部署完成");
+    LOGI("FakeIO: 正在通过 dlsym 寻找函数地址...");
+
+    // 使用更稳定的 RTLD_DEFAULT 寻找 libc 函数
+    void* openat_ptr = dlsym(RTLD_DEFAULT, "openat");
+    // 在 64 位系统上，stat 往往映射为 fstatat 或 newfstatat
+    void* stat_ptr = dlsym(RTLD_DEFAULT, "newfstatat");
+    if (stat_ptr == nullptr) {
+        stat_ptr = dlsym(RTLD_DEFAULT, "fstatat64");
+    }
+
+    // 只有找到地址后才执行 Hook，防止空指针闪退
+    if (openat_ptr != nullptr) {
+        DobbyHook(openat_ptr, (void*)my_openat, (void**)&orig_openat);
+        LOGI("FakeIO: openat Hook 部署成功");
+    }
+
+    if (stat_ptr != nullptr) {
+        DobbyHook(stat_ptr, (void*)my_newfstatat, (void**)&orig_newfstatat);
+        LOGI("FakeIO: newfstatat Hook 部署成功");
+    }
 }
