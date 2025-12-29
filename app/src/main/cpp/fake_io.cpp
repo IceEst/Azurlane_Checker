@@ -3,10 +3,10 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <android/log.h>
-#include <dlfcn.h> 
+#include <dlfcn.h>
 #include <string.h>
 
-// 强制以 C 方式引入 Dobby 头文件，解决“undeclared identifier”问题
+// 必须使用 extern "C" 保护，否则编译器找不到 DobbyHook
 extern "C" {
     #include "dobby.h"
 }
@@ -17,51 +17,54 @@ extern "C" {
 const char* ORIG_BASE_NAME = "base.apk";
 const char* REDIRECT_TARGET = "/data/data/com.bilibili.azurlane/base_orig.apk";
 
-// 原始函数指针
 int (*orig_openat)(int, const char*, int, mode_t) = nullptr;
 int (*orig_newfstatat)(int, const char*, struct stat*, int) = nullptr;
 
-// 智能重定向：保留 !/ 之后的路径，防止“存储空间不足”弹窗
+// 智能路径处理：只替换 base.apk 部分，保留后缀
 std::string get_redirected_path(const char* pathname) {
     std::string path_str(pathname);
     size_t pos = path_str.find(ORIG_BASE_NAME);
     if (pos != std::string::npos) {
+        // 提取 base.apk 之后的部分（如 !/assets/...）
         std::string suffix = path_str.substr(pos + strlen(ORIG_BASE_NAME));
-        return std::string(REDIRECT_TARGET) + suffix;
+        // 拼接：新的前缀 + 原有的后缀
+        std::string final_path = std::string(REDIRECT_TARGET) + suffix;
+        LOGI("智能重定向成功: %s -> %s", pathname, final_path.c_str());
+        return final_path;
     }
     return path_str;
 }
 
 int my_openat(int dirfd, const char* pathname, int flags, mode_t mode) {
     if (pathname && strstr(pathname, ORIG_BASE_NAME)) {
-        return orig_openat(dirfd, get_redirected_path(pathname).c_str(), flags, mode);
+        std::string n_path = get_redirected_path(pathname);
+        return orig_openat(dirfd, n_path.c_str(), flags, mode);
     }
     return orig_openat(dirfd, pathname, flags, mode);
 }
 
 int my_newfstatat(int dirfd, const char* pathname, struct stat* buf, int flags) {
     if (pathname && strstr(pathname, ORIG_BASE_NAME)) {
-        return orig_newfstatat(dirfd, get_redirected_path(pathname).c_str(), buf, flags);
+        std::string n_path = get_redirected_path(pathname);
+        return orig_newfstatat(dirfd, n_path.c_str(), buf, flags);
     }
     return orig_newfstatat(dirfd, pathname, buf, flags);
 }
 
 __attribute__((constructor))
 void init() {
-    LOGI("FakeIO: 模块加载，正在部署 Hook...");
+    LOGI("FakeIO: 正在搜寻目标地址...");
 
-    // 使用标准的 dlsym 寻找函数地址，增加稳定性
     void* openat_ptr = dlsym(RTLD_DEFAULT, "openat");
     void* stat_ptr = dlsym(RTLD_DEFAULT, "newfstatat");
     if (!stat_ptr) stat_ptr = dlsym(RTLD_DEFAULT, "fstatat64");
 
-    // 只有地址有效时才执行 Hook
     if (openat_ptr) {
+        // 使用强制转换适配 Dobby API
         DobbyHook(openat_ptr, (dobby_dummy_func_t)my_openat, (dobby_dummy_func_t*)&orig_openat);
     }
     if (stat_ptr) {
         DobbyHook(stat_ptr, (dobby_dummy_func_t)my_newfstatat, (dobby_dummy_func_t*)&orig_newfstatat);
     }
-    
-    LOGI("FakeIO: Hook 部署尝试完成");
+    LOGI("FakeIO: 智能 Hook 部署完成");
 }
