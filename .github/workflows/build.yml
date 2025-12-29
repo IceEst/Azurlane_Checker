@@ -19,10 +19,12 @@ jobs:
         with:
           ndk-version: r23c
 
-      - name: Download Dobby Library
+- name: Download Dobby Library
         run: |
           mkdir -p app/src/main/cpp/dobby
           git clone --depth 1 https://github.com/jmpews/Dobby.git app/src/main/cpp/dobby
+          # 强制移除可能导致错误的模块源码（可选暴力手段）
+          rm -rf app/src/main/cpp/dobby/source/TrampolineBridge/ClosureTrampolineBridge
 
       - name: Setup Gradle
         # 使用此 Action 直接安装 Gradle 8.2，跳过系统默认的 9.2.1
