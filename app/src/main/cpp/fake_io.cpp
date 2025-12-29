@@ -3,8 +3,13 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <android/log.h>
-#include <dlfcn.h>
+#include <dlfcn.h> 
 #include <string.h>
+
+// 强制以 C 方式引入 Dobby 头文件，解决“undeclared identifier”问题
+extern "C" {
+    #include "dobby.h"
+}
 
 #define LOG_TAG "FakeIO"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -12,51 +17,51 @@
 const char* ORIG_BASE_NAME = "base.apk";
 const char* REDIRECT_TARGET = "/data/data/com.bilibili.azurlane/base_orig.apk";
 
+// 原始函数指针
 int (*orig_openat)(int, const char*, int, mode_t) = nullptr;
 int (*orig_newfstatat)(int, const char*, struct stat*, int) = nullptr;
 
-// 智能路径处理函数
-std::string get_new_path(const char* pathname) {
+// 智能重定向：保留 !/ 之后的路径，防止“存储空间不足”弹窗
+std::string get_redirected_path(const char* pathname) {
     std::string path_str(pathname);
     size_t pos = path_str.find(ORIG_BASE_NAME);
     if (pos != std::string::npos) {
-        // 保留 base.apk 之后的所有字符（包括 !/ 及其后面的路径）
         std::string suffix = path_str.substr(pos + strlen(ORIG_BASE_NAME));
-        std::string final_path = std::string(REDIRECT_TARGET) + suffix;
-        LOGI("智能重定向成功: %s -> %s", pathname, final_path.c_str());
-        return final_path;
+        return std::string(REDIRECT_TARGET) + suffix;
     }
     return path_str;
 }
 
 int my_openat(int dirfd, const char* pathname, int flags, mode_t mode) {
     if (pathname && strstr(pathname, ORIG_BASE_NAME)) {
-        std::string n_path = get_new_path(pathname);
-        return orig_openat(dirfd, n_path.c_str(), flags, mode);
+        return orig_openat(dirfd, get_redirected_path(pathname).c_str(), flags, mode);
     }
     return orig_openat(dirfd, pathname, flags, mode);
 }
 
 int my_newfstatat(int dirfd, const char* pathname, struct stat* buf, int flags) {
     if (pathname && strstr(pathname, ORIG_BASE_NAME)) {
-        std::string n_path = get_new_path(pathname);
-        return orig_newfstatat(dirfd, n_path.c_str(), buf, flags);
+        return orig_newfstatat(dirfd, get_redirected_path(pathname).c_str(), buf, flags);
     }
     return orig_newfstatat(dirfd, pathname, buf, flags);
 }
 
 __attribute__((constructor))
 void init() {
-    // 使用 dlsym 确保在 x86_64 模拟器环境下的稳定性
+    LOGI("FakeIO: 模块加载，正在部署 Hook...");
+
+    // 使用标准的 dlsym 寻找函数地址，增加稳定性
     void* openat_ptr = dlsym(RTLD_DEFAULT, "openat");
     void* stat_ptr = dlsym(RTLD_DEFAULT, "newfstatat");
     if (!stat_ptr) stat_ptr = dlsym(RTLD_DEFAULT, "fstatat64");
 
+    // 只有地址有效时才执行 Hook
     if (openat_ptr) {
-        DobbyHook(openat_ptr, (void*)my_openat, (void**)&orig_openat);
+        DobbyHook(openat_ptr, (dobby_dummy_func_t)my_openat, (dobby_dummy_func_t*)&orig_openat);
     }
     if (stat_ptr) {
-        DobbyHook(stat_ptr, (void*)my_newfstatat, (void**)&orig_newfstatat);
+        DobbyHook(stat_ptr, (dobby_dummy_func_t)my_newfstatat, (dobby_dummy_func_t*)&orig_newfstatat);
     }
-    LOGI("FakeIO: 智能 Hook 已部署，等待游戏启动...");
+    
+    LOGI("FakeIO: Hook 部署尝试完成");
 }
