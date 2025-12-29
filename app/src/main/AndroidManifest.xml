@@ -7,7 +7,7 @@
             android:value="true" />
         <meta-data
             android:name="xposeddescription"
-            android:value="碧蓝航线 IO 重定向模块 (拦截 openat/newfstatat)" />
+            android:value="碧蓝航线环境安全自检模块 (Checker)" />
         <meta-data
             android:name="xposedminversion"
             android:value="93" />
