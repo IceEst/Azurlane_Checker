@@ -10,7 +10,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven { url 'https://api.xposed.info/' } // Xposed API 仓库
+        maven { url 'https://api.xposed.info/' }
     }
 }
 rootProject.name = "AzurLane-FakeIO"
